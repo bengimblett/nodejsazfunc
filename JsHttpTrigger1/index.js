@@ -14,11 +14,12 @@ appInsights.setup(process.env["APPINSIGHTS_INSTRUMENTATIONKEY"])
 const axios = require("axios");
 
 /**
- * No changes required to your existing Function logic
+ * Actual Function logic
  */
 const httpTrigger = async function (context, req) {
     context.log.info("hello world");
-    appInsights.defaultClient.trackTrace({message: "trace message"});
+    // equiv - tracked under operation id
+    //appInsights.defaultClient.trackTrace({message: "hello world"});
     const response = await axios.get(process.env["downstreamurl"] + "?name=demo");
 
     context.res = {
@@ -27,7 +28,7 @@ const httpTrigger = async function (context, req) {
     };
 };
 
-// Default export wrapped with Application Insights FaaS context propagation
+// Entry point for the functions runtime - wrapper for app insights correlation context
 module.exports = async function (context, req) {
     // Start an AI Correlation Context using the provided Function context
     const correlationContext = appInsights.startOperation(context, req);
