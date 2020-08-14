@@ -1,5 +1,5 @@
 const appInsights = require("applicationinsights");
-appInsights.setup("64667cee-033a-474a-91a7-cc7f07fd31be")
+appInsights.setup(process.env["APPINSIGHTS_INSTRUMENTATIONKEY"])
     .setAutoDependencyCorrelation(true)
     .setAutoCollectRequests(true)
     .setAutoCollectPerformance(true, true)
@@ -14,12 +14,13 @@ appInsights.setup("64667cee-033a-474a-91a7-cc7f07fd31be")
 const axios = require("axios");
 
 /**
- * Function logic sample from https://github.com/Microsoft/ApplicationInsights-node.js/
+ * No changes required to your existing Function logic
  */
 const httpTrigger = async function (context, req) {
-    // call depend
-    const response = await axios.get("https://begimdemohttpfn.azurewebsites.net/api/HttpTrigger2?name=demo");
-    // echo result
+    context.log.info("hello world");
+    appInsights.defaultClient.trackTrace({message: "trace message"});
+    const response = await axios.get(process.env["downstreamurl"] + "?name=demo");
+
     context.res = {
         status: response.status,
         body: response.data,
@@ -28,10 +29,13 @@ const httpTrigger = async function (context, req) {
 
 // Default export wrapped with Application Insights FaaS context propagation
 module.exports = async function (context, req) {
-   
+    // Start an AI Correlation Context using the provided Function context
     const correlationContext = appInsights.startOperation(context, req);
 
+    // Wrap the Function runtime with correlationContext
     return appInsights.wrapWithCorrelationContext(async () => {
+        const startTime = Date.now(); // Start trackRequest timer
+
         // Run the Function
         await httpTrigger(context, req);
 
